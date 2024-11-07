@@ -10,6 +10,12 @@
 * install, activate or otherwise use the software.
 *
 ******************************************************************************/
+
+/******************************************************************************
+ *
+ *  The original Work has been changed by PIONIX GmbH in 11-2024
+ *
+ ******************************************************************************/
 #include <android-base/stringprintf.h>
 #include <base/logging.h>
 #include "configPathProvider.h"
@@ -93,7 +99,7 @@ string ConfigPathProvider::getFilePath(FileType type) {
         return path;
     } break;
     case SYSTEM_CONFIG: {
-        const vector<string> searchPath = { "//usr/local//etc//" };
+        const vector<string> searchPath = { "//usr/local//etc//", CONFIG_PATH };
         for (string path : searchPath) {
             addEnvPathIfAvailable(path);
             path.append("libnfc-nci.conf");
