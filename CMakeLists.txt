@@ -312,7 +312,7 @@ if (LIBNFCNCI_INSTALL)
     )
 
     evc_setup_package(
-        NAME libnfc_nci
+        NAME libnfc-nci
         EXPORT libnfc_nci-targets
         NAMESPACE libnfc_nci
         PATH_VARS
