@@ -14,7 +14,9 @@ find_library(LIBRT rt)
 option(LIBNFCNCI_BUILD_EXAMPLES "enable building of examples" OFF)
 option(LIBNFCNCI_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
 
-set (VAR_LIBNFCNCI_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/etc/libnfc_config/")
+if (NOT LIBNFCNCI_CONFIG_INSTALL_PATH)
+    set (LIBNFCNCI_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_SYSCONFDIR}/everest/libnfc_config/")
+endif()
 
 set (LIBNFCNCI_CONFIG_FILES
     conf/libnfc-nci.conf
@@ -211,7 +213,7 @@ set (LIBNFCNCI_INCLUDE_DIRS
 )
 
 set (COMPILE_DEFINITIONS
-    -DCONFIG_PATH="${VAR_LIBNFCNCI_CONFIG_INSTALL_PATH}"
+    -DCONFIG_PATH="${LIBNFCNCI_CONFIG_INSTALL_PATH}"
     -DNFC_CFG_DEBUG=FALSE
     -DNFC_NXP_NOT_OPEN_INCLUDED=TRUE
     -DNXP_HW_SELF_TEST
@@ -244,7 +246,7 @@ target_compile_definitions(libnfc_nci
 
 set_target_properties(libnfc_nci
     PROPERTIES
-        LIBNFCNCI_CONFIG_INSTALL_PATH "${VAR_LIBNFCNCI_CONFIG_INSTALL_PATH}"
+        LIBNFCNCI_CONFIG_INSTALL_PATH "${LIBNFCNCI_CONFIG_INSTALL_PATH}"
 )
 
 # NOTE (aw): this is dangerous
@@ -308,7 +310,7 @@ if (LIBNFCNCI_INSTALL)
     )
 
     install(FILES ${LIBNFCNCI_CONFIG_FILES}
-        DESTINATION "${VAR_LIBNFCNCI_CONFIG_INSTALL_PATH}"
+        DESTINATION "${LIBNFCNCI_CONFIG_INSTALL_PATH}"
     )
 
     evc_setup_package(
@@ -316,7 +318,7 @@ if (LIBNFCNCI_INSTALL)
         EXPORT libnfc_nci-targets
         NAMESPACE libnfc_nci
         PATH_VARS
-            LIBNFCNCI_CONFIG_INSTALL_PATH "${VAR_LIBNFCNCI_CONFIG_INSTALL_PATH}"
+            LIBNFCNCI_CONFIG_INSTALL_PATH "${LIBNFCNCI_CONFIG_INSTALL_PATH}"
         ADDITIONAL_CONTENT
             "find_dependency(Threads)"
             "set_target_properties(libnfc_nci::libnfc_nci PROPERTIES LIBNFCNCI_CONFIG_INSTALL_PATH \"@PACKAGE_LIBNFCNCI_CONFIG_INSTALL_PATH@\")"
