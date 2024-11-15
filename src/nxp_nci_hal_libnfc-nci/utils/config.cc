@@ -865,21 +865,15 @@ extern "C" int GetStrValue(const char* name, char* pValue, unsigned long l)
 //      printf("%s: NCI Config Parameter :%s = (0x%x)\n", __FUNCTION__, name, v);
     }
 
-    switch (len)
-    {
-    case sizeof(unsigned int):
+    if (len == sizeof(unsigned int)) {
         *(static_cast<unsigned int*>(pValue)) = (unsigned int)v;
-        break;
-    case sizeof(unsigned long):
+    } else if (len == sizeof(unsigned long)) {
         *(static_cast<unsigned long*>(pValue)) = (unsigned long)v;
-        break;
-    case sizeof(unsigned short):
+    } else if (len == sizeof(unsigned short)) {
         *(static_cast<unsigned short*>(pValue)) = (unsigned short)v;
-        break;
-    case sizeof(unsigned char):
+    } else if (len == sizeof(unsigned char)) {
         *(static_cast<unsigned char*> (pValue)) = (unsigned char)v;
-        break;
-    default:
+    } else {
         return false;
     }
     return true;
