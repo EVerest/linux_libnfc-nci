@@ -60,7 +60,27 @@ string getEnvVar(std::string const &key);
 *******************************************************************************/
 void addEnvPathIfAvailable(string &path);
 
+/*******************************************************************************
+**
+** Static Member    s_configPath
+**
+** Description      Runtime configurable configuration file path
+**
+*******************************************************************************/
+inline static string s_configPath {"//usr//local//etc//"};
+
 public:
+/*******************************************************************************
+**
+** Function         setConfigPath
+**
+** Description      set search path for config files
+**
+** Returns          None
+**
+*******************************************************************************/
+static void setConfigPath(const string &path);
+
 /*******************************************************************************
 **
 ** Function         getInstance

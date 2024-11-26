@@ -40,6 +40,8 @@ NfcHandler::NfcHandler() {
         throw std::runtime_error("Only one global nfc handler instance allowed");
     }
 
+    setConfigPath("../../build/dist/etc/everest/libnfc_config")
+
     InitializeLogLevel();
 
     if (doInitialize() != 0) {

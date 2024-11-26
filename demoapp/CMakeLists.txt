@@ -7,7 +7,7 @@ project(libnfcnci_demo
     DESCRIPTION "NFC NCI library demo app"
     LANGUAGES C CXX)
 
-find_package(libnfc_nci REQUIRED)
+find_package(libnfc-nci REQUIRED)
 
 get_target_property(LIBNFCNCI_CONFIG_INSTALL_PATH libnfc_nci::libnfc_nci LIBNFCNCI_CONFIG_INSTALL_PATH)
 

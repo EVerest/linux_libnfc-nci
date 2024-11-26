@@ -631,6 +631,11 @@ extern int nfcTag_switchRF(unsigned int handle, int is_frame_rf);
 extern int nfcTag_transceive (unsigned int handle, unsigned char *tx_buffer, int tx_buffer_length, unsigned char* rx_buffer, int rx_buffer_length, unsigned int timeout);
 
 
+/**
+* \brief set config file search path.
+* \return None
+*/
+extern void setConfigPath (const char *path);
 
 /**
 * \brief initialize nfc stack.

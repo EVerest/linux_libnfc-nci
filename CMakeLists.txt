@@ -244,11 +244,6 @@ target_compile_definitions(libnfc_nci
     PRIVATE
         ${COMPILE_DEFINITIONS})
 
-set_target_properties(libnfc_nci
-    PROPERTIES
-        LIBNFCNCI_CONFIG_INSTALL_PATH "${LIBNFCNCI_CONFIG_INSTALL_PATH}"
-)
-
 # NOTE (aw): this is dangerous
 target_compile_options(libnfc_nci
     PRIVATE
@@ -317,11 +312,8 @@ if (LIBNFCNCI_INSTALL)
         NAME libnfc-nci
         EXPORT libnfc_nci-targets
         NAMESPACE libnfc_nci
-        PATH_VARS
-            LIBNFCNCI_CONFIG_INSTALL_PATH "${LIBNFCNCI_CONFIG_INSTALL_PATH}"
         ADDITIONAL_CONTENT
             "find_dependency(Threads)"
-            "set_target_properties(libnfc_nci::libnfc_nci PROPERTIES LIBNFCNCI_CONFIG_INSTALL_PATH \"@PACKAGE_LIBNFCNCI_CONFIG_INSTALL_PATH@\")"
     )
 endif()
 
