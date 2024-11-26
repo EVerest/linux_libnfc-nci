@@ -17,6 +17,9 @@
  ******************************************************************************/
 
 #include "linux_nfc_api.h"
+#include "phNxpConfig.h"
+#include "configPathProvider.h"
+#include "config.h"
 #include "nativeNfcManager.h"
 #include "nativeNfcSnep.h"
 #include "nativeNfcHandover.h"
@@ -179,6 +182,13 @@ int nfcTag_transceive (unsigned int handle, unsigned char *tx_buffer, int tx_buf
     int ret;
     ret = nativeNfcTag_doTransceive(handle, tx_buffer, tx_buffer_length, rx_buffer, rx_buffer_length, timeout);
     return ret;
+}
+
+void setConfigPath (const char *path)
+{
+    SetNxpAlternativeConfigPath(path);
+    ConfigPathProvider::setConfigPath(path);
+    SetNciHalConfigPath(path);
 }
 
 int doInitialize ()
