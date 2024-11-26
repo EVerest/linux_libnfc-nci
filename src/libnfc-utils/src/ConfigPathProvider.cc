@@ -89,17 +89,17 @@ string ConfigPathProvider::getFilePath(FileType type) {
         << StringPrintf("%s: enter FileType:0x%02x", __func__, type);
     switch (type) {
     case VENDOR_NFC_CONFIG: {
-        string path = "//usr//local//etc//libnfc-nxp.conf";
+        string path = s_configPath + "libnfc-nxp.conf";
         addEnvPathIfAvailable(path);
         return path;
     } break;
     case VENDOR_ESE_CONFIG: {
-        string path = "//usr//local//etc//libese-nxp.conf";
+        string path = s_configPath + "libese-nxp.conf";
         addEnvPathIfAvailable(path);
         return path;
     } break;
     case SYSTEM_CONFIG: {
-        const vector<string> searchPath = { "//usr/local//etc//", CONFIG_PATH };
+        const vector<string> searchPath = { s_configPath };
         for (string path : searchPath) {
             addEnvPathIfAvailable(path);
             path.append("libnfc-nci.conf");
@@ -111,12 +111,12 @@ string ConfigPathProvider::getFilePath(FileType type) {
         return "";
     } break;
     case RF_CONFIG: {
-        string path = "//usr//local//etc//libnfc-nxp_RF.conf";
+        string path = s_configPath + "etc//libnfc-nxp_RF.conf";
         addEnvPathIfAvailable(path);
         return path;
     } break;
     case TRANSIT_CONFIG: {
-        string path = "//usr/local//etc//libnfc-nxpTransit.conf";
+        string path = s_configPath + "libnfc-nxpTransit.conf";
         addEnvPathIfAvailable(path);
         return path;
     } break;
@@ -127,22 +127,22 @@ string ConfigPathProvider::getFilePath(FileType type) {
         return nfc_storage_path;
     } break;
     case FIRMWARE_LIB: {
-        string path = "//usr/local//etc//libsn100u_fw.dll";
+        string path = s_configPath + "libsn100u_fw.dll";
         addEnvPathIfAvailable(path);
         return path;
     } break;
     case CONFIG_TIMESTAMP: {
-        string path = "//usr//local//etc//libnfc-nxpConfigState.bin";
+        string path = s_configPath + "libnfc-nxpConfigState.bin";
         addEnvPathIfAvailable(path);
         return path;
     } break;
     case RF_CONFIG_TIMESTAMP: {
-        string path = "//usr//local//etc//libnfc-nxpRFConfigState.bin";
+        string path = s_configPath + "libnfc-nxpRFConfigState.bin";
         addEnvPathIfAvailable(path);
         return path;
     } break;
     case TRANSIT_CONFIG_TIMESTAMP: {
-        string path = "//usr//local//etc//libnfc-nxpTransitConfigState.bin";
+        string path = s_configPath + "libnfc-nxpTransitConfigState.bin";
         addEnvPathIfAvailable(path);
         return path;
     } break;
@@ -151,5 +151,20 @@ string ConfigPathProvider::getFilePath(FileType type) {
         DLOG_IF(INFO, nfc_debug_enabled)
             << StringPrintf("%s: Unnknown FileType", __func__);
         break;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         setConfigPath
+**
+** Description      set search path for config files
+**
+** Returns          None
+**
+*******************************************************************************/
+void ConfigPathProvider::setConfigPath(const string &path) {
+    if (!path.empty()) {
+        ConfigPathProvider::s_configPath = path + "/";
     }
 }

@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+extern "C" void SetNciHalConfigPath(const char* path);
+
 class ConfigValue {
  public:
   enum Type { UNSIGNED, STRING, BYTES };

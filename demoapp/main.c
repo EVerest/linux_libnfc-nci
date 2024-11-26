@@ -586,6 +586,8 @@ void onSnepClientClosed()
 int InitMode(int tag, int p2p, int hce)
 {
     int res = 0x00;
+
+    setConfigPath("../../build/dist/etc/everest/libnfc_config");
     
     InitializeLogLevel();
     g_TagCB.onTagArrival = onTagArrival;

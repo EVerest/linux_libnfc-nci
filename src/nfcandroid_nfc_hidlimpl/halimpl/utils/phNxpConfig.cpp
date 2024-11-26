@@ -102,7 +102,8 @@ public:
     };
     virtual ~CNxpNfcConfig();
     static CNxpNfcConfig& GetInstance(unsigned long type = NXP_CFG_INIT);
-    friend void readOptionalConfig(const char* optional);
+    static string s_alternativeConfigPath;
+    friend void readOptionalConfig(const char *optional);
     int updateTimestamp();
     int checkTimestamp();
 
@@ -128,6 +129,9 @@ private:
     inline void Set(unsigned long f) {state |= f;}
     inline void Reset(unsigned long f) {state &= ~f;}
 };
+
+
+string CNxpNfcConfig::s_alternativeConfigPath = {alternative_config_path};
 
 /*******************************************************************************
 **
@@ -522,11 +526,11 @@ CNxpNfcConfig& CNxpNfcConfig::GetInstance(unsigned long cfgtype)
     {
         int cfg_file_stat = -1;
 
-        if (alternative_config_path[0] != '\0')
+        if (!s_alternativeConfigPath.empty())
         {
             struct stat st;
 
-            strPath.assign(alternative_config_path);
+            strPath.assign(s_alternativeConfigPath);
             strPath += cfg_name;
             cfg_file_stat = stat(strPath.c_str(), &st);
         }
@@ -959,6 +963,22 @@ CNxpNfcParam::CNxpNfcParam(const char* name,  unsigned long value) :
     string(name),
     m_numValue(value)
 {
+}
+
+/*******************************************************************************
+**
+** Function:    SetNxpAlternativeConfigPath
+**
+** Description: API function for setting an alternative configuration search path
+**
+** Returns:     None
+**
+*******************************************************************************/
+extern "C" void SetNxpAlternativeConfigPath(const char* path)
+{
+    if (path[0] != '\0') {
+        CNxpNfcConfig::s_alternativeConfigPath = string(path) + "/";
+    }
 }
 
 /*******************************************************************************

@@ -209,6 +209,7 @@ class CNfcConfig : public vector<const CNfcParam*>
 public:
     virtual ~CNfcConfig();
     static CNfcConfig& GetInstance();
+    inline static string s_alternativeConfigPath {alternative_config_path};
     friend void readOptionalConfig(const char* optional);
 
     bool    getValue(const char* name, char* pValue, size_t& len) const;
@@ -231,6 +232,22 @@ private:
     inline void Set(unsigned long f) {state |= f;}
     inline void Reset(unsigned long f) {state &= ~f;}
 };
+
+/*******************************************************************************
+**
+** Function:    SetNciHalConfigPath()
+**
+** Description: set config file search path
+**
+** Returns:     none
+**
+*******************************************************************************/
+void SetNciHalConfigPath(const char* path)
+{
+    if (path[0] != '\0') {
+        CNfcConfig::s_alternativeConfigPath = string(path) + "/";
+    }
+}
 
 /*******************************************************************************
 **
@@ -552,9 +569,9 @@ CNfcConfig& CNfcConfig::GetInstance()
 
     if (theInstance.size() == 0 && theInstance.mValidFile)
     {
-        if (alternative_config_path[0] != '\0')
+        if (!s_alternativeConfigPath.empty())
         {
-            strPath.assign(alternative_config_path);
+            strPath.assign(s_alternativeConfigPath);
             strPath += cfg_name;
 #if (NFC_CFG_DEBUG == 0x01)
             /* Since the config file is loaded before reading the configuration,
@@ -878,5 +895,6 @@ extern "C" int GetStrValue(const char* name, char* pValue, unsigned long l)
     }
     return true;
 }
+
 #endif
 
