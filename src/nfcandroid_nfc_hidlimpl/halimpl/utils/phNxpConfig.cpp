@@ -44,6 +44,7 @@
 
 #include <phNxpConfig.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -113,13 +114,17 @@ public:
     bool    getValue(const char* name, char* pValue, long len,long* readlen) const;
     const CNxpNfcParam*    find(const char* p_name) const;
     void    clean();
+    void    addOrReplace(const CNxpNfcParam* pParam);
+    void    addOrReplaceRuntimeOverride(const CNxpNfcParam* pParam);
 private:
     CNxpNfcConfig();
     bool    readConfig(const char* name, bool bResetContent);
+    void    applyRuntimeOverrides();
     void    moveFromList();
     void    moveToList();
     void    add(const CNxpNfcParam* pParam);
     list<const CNxpNfcParam*> m_list;
+    list<const CNxpNfcParam*> m_runtimeOverrides;
     bool    mValidFile;
     unsigned long m_timeStamp;
 
@@ -445,6 +450,9 @@ CNxpNfcConfig::CNxpNfcConfig() :
 *******************************************************************************/
 CNxpNfcConfig::~CNxpNfcConfig()
 {
+    for (list<const CNxpNfcParam*>::iterator it = m_runtimeOverrides.begin();
+         it != m_runtimeOverrides.end(); ++it)
+        delete *it;
 }
 
 /*******************************************************************************
@@ -555,6 +563,8 @@ CNxpNfcConfig& CNxpNfcConfig::GetInstance(unsigned long cfgtype)
             hw_cfg_loaded = true;
         }
     }
+
+    theInstance.applyRuntimeOverrides();
 
     return theInstance;
 }
@@ -737,6 +747,70 @@ void CNxpNfcConfig::add(const CNxpNfcParam* pParam)
         return;
     }
     m_list.push_back(pParam);
+}
+
+/*******************************************************************************
+**
+** Function:    CNxpNfcConfig::addOrReplace()
+**
+** Description: add or replace a setting object in the array
+**
+** Returns:     none
+**
+*******************************************************************************/
+void CNxpNfcConfig::addOrReplace(const CNxpNfcParam* pParam)
+{
+    for (iterator it = begin(), itEnd = end(); it != itEnd; ++it)
+    {
+        if (**it < pParam->c_str())
+            continue;
+        if (**it == pParam->c_str())
+        {
+            delete *it;
+            erase(it);
+        }
+        break;
+    }
+
+    for (iterator it = begin(), itEnd = end(); it != itEnd; ++it)
+    {
+        if (**it < pParam->c_str())
+            continue;
+        insert(it, pParam);
+        return;
+    }
+
+    push_back(pParam);
+}
+
+void CNxpNfcConfig::addOrReplaceRuntimeOverride(const CNxpNfcParam* pParam)
+{
+    for (list<const CNxpNfcParam*>::iterator it = m_runtimeOverrides.begin();
+         it != m_runtimeOverrides.end(); ++it)
+    {
+        if (**it == pParam->c_str())
+        {
+            delete *it;
+            m_runtimeOverrides.erase(it);
+            break;
+        }
+    }
+
+    m_runtimeOverrides.push_back(pParam);
+    applyRuntimeOverrides();
+}
+
+void CNxpNfcConfig::applyRuntimeOverrides()
+{
+    for (list<const CNxpNfcParam*>::const_iterator it = m_runtimeOverrides.begin();
+         it != m_runtimeOverrides.end(); ++it)
+    {
+        const CNxpNfcParam* pParam = *it;
+        if (pParam->str_len() > 0)
+            addOrReplace(new CNxpNfcParam(pParam->c_str(), string(pParam->str_value())));
+        else
+            addOrReplace(new CNxpNfcParam(pParam->c_str(), pParam->numValue()));
+    }
 }
 
 /*******************************************************************************
@@ -979,6 +1053,99 @@ extern "C" void SetNxpAlternativeConfigPath(const char* path)
     if (path[0] != '\0') {
         CNxpNfcConfig::s_alternativeConfigPath = string(path) + "/";
     }
+}
+
+static bool isRuntimeConfigKey(const char* name) {
+    return strcmp(name, NAME_NXP_TRANSPORT) == 0 ||
+           strcmp(name, NAME_EXT_PIN_INT) == 0 ||
+           strcmp(name, NAME_EXT_PIN_ENABLE) == 0 ||
+           strcmp(name, NAME_EXT_PIN_FWDNLD) == 0 ||
+           strcmp(name, NAME_EXT_I2C_ADDRESS) == 0 ||
+           strcmp(name, NAME_EXT_I2C_BUS) == 0 ||
+           strcmp(name, NAME_EXT_SPI_BUS) == 0;
+}
+
+static bool parseUnsignedConfigValue(const char* value, unsigned long* parsed) {
+    if (value == NULL || value[0] == '\0' || parsed == NULL) {
+        return false;
+    }
+
+    char* end = NULL;
+    unsigned long parsed_value = strtoul(value, &end, 0);
+    if (end == value || *end != '\0') {
+        return false;
+    }
+
+    *parsed = parsed_value;
+    return true;
+}
+
+static bool parseI2cAddressValue(const char* value, unsigned long* parsed) {
+    if (value == NULL || value[0] == '-') {
+        return false;
+    }
+
+    unsigned long parsed_value = 0;
+    if (!parseUnsignedConfigValue(value, &parsed_value) || parsed_value > 0x7F) {
+        return false;
+    }
+
+    if (parsed != NULL) {
+        *parsed = parsed_value;
+    }
+    return true;
+}
+
+/*******************************************************************************
+**
+** Function:    SetNxpConfigValue
+**
+** Description: API function for overriding selected runtime transport settings
+**              without modifying libnfc-nxp.conf on disk.
+**
+** Returns:     1 if successful, 0 otherwise
+**
+*******************************************************************************/
+extern "C" int SetNxpConfigValue(const char* name, const char* value)
+{
+    if (name == NULL || value == NULL || !isRuntimeConfigKey(name)) {
+        return false;
+    }
+
+    CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance();
+
+    if (strcmp(name, NAME_EXT_I2C_BUS) == 0 ||
+        strcmp(name, NAME_EXT_SPI_BUS) == 0) {
+        rConfig.addOrReplaceRuntimeOverride(new CNxpNfcParam(name, string(value)));
+        return true;
+    }
+
+    if (strcmp(name, NAME_NXP_TRANSPORT) == 0) {
+        unsigned long parsed_value = 0;
+        if (!parseUnsignedConfigValue(value, &parsed_value)) {
+            return false;
+        }
+        rConfig.addOrReplaceRuntimeOverride(new CNxpNfcParam(name, parsed_value));
+        return true;
+    }
+
+    if (strcmp(name, NAME_EXT_I2C_ADDRESS) == 0) {
+        unsigned long parsed_value = 0;
+        if (!parseI2cAddressValue(value, &parsed_value)) {
+            return false;
+        }
+        rConfig.addOrReplaceRuntimeOverride(new CNxpNfcParam(name, parsed_value));
+        return true;
+    }
+
+    unsigned long parsed_value = 0;
+    if (parseUnsignedConfigValue(value, &parsed_value)) {
+        rConfig.addOrReplaceRuntimeOverride(new CNxpNfcParam(name, parsed_value));
+    } else {
+        rConfig.addOrReplaceRuntimeOverride(new CNxpNfcParam(name, string(value)));
+    }
+
+    return true;
 }
 
 /*******************************************************************************
