@@ -578,7 +578,7 @@ bool CNxpNfcConfig::getValue(const char* name, char* pValue, size_t len) const
     if (pParam->str_len() > 0)
     {
         memset(pValue, 0, len);
-        memcpy(pValue, pParam->str_value(), pParam->str_len());
+        memcpy(pValue, pParam->str_value(), (len - 1 < pParam->str_len()) ? len - 1 : pParam->str_len());
         return true;
     }
     return false;
@@ -1058,6 +1058,11 @@ extern "C" int GetNxpNumValue(const char* name, void* pValue, unsigned long len)
     case sizeof(unsigned long):
         *(static_cast<unsigned long*>(pValue)) = (unsigned long)v;
         break;
+#if __SIZEOF_LONG__ != __SIZEOF_INT__
+    case sizeof(unsigned int):
+        *(static_cast<unsigned int*>(pValue)) = (unsigned int)v;
+        break;
+#endif
     case sizeof(unsigned short):
         *(static_cast<unsigned short*>(pValue)) = (unsigned short)v;
         break;
@@ -1084,12 +1089,12 @@ extern "C" int GetNxpNumValue(const char* name, void* pValue, unsigned long len)
 **
 *******************************************************************************/
 extern "C" int loadIntValueOrDefault(const char* name, int default_value) {
-  int value;
-  int isfound = GetNxpNumValue(name, &value, sizeof(&value));
-  if (isfound > 0) {
-    return value;
-  }
-  return default_value;
+    unsigned long value = 0;
+    int isfound = GetNxpNumValue(name, &value, sizeof(value));
+    if (isfound > 0) {
+        return (int)value;
+    }
+    return default_value;
 }
 
 /*******************************************************************************

@@ -5,13 +5,25 @@ project(libnfcnci
     DESCRIPTION "NFC NCI library adapted for use with EVerest"
     LANGUAGES C CXX)
 
+include(GNUInstallDirs)
+
 find_package(everest-cmake 0.1 REQUIRED
     PATHS ../everest-cmake
 )
 find_package(Threads REQUIRED)
 
+
 option(LIBNFCNCI_BUILD_EXAMPLES "enable building of examples" OFF)
 option(LIBNFCNCI_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
+option(LIBNFCNCI_LIBGPIOD "Build with libgpiod support" OFF)
+
+if (LIBNFCNCI_LIBGPIOD)
+    # search for package PkgConfig
+    find_package(PkgConfig REQUIRED)
+
+    # search for libgpiod
+    pkg_search_module(LIBGPIOD REQUIRED libgpiodcxx)
+endif()
 
 if (NOT LIBNFCNCI_CONFIG_INSTALL_PATH)
     set (LIBNFCNCI_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_SYSCONFDIR}/everest/libnfc_config/")
@@ -21,6 +33,14 @@ set (LIBNFCNCI_CONFIG_FILES
     conf/libnfc-nci.conf
     conf/libnfc-nxp.conf
 )
+
+set(LIBNFCNCI_PUBLIC_HEADERS
+    src/include/linux_nfc_api.h
+    src/include/linux_nfc_api_compatibility.h
+    src/include/linux_nfc_factory_api.h
+)
+
+set(LIBNFCNCI_SOVERSION 1)
 
 set (LIBNFCNCI_SOURCES
     src/android/utility/base/file.cpp
@@ -226,10 +246,11 @@ set (COMPILE_DEFINITIONS
     -DSNEP_ENABLED
 )
 
+
 #
 # library target
 #
-add_library(libnfc_nci)
+add_library(libnfc_nci SHARED)
 add_library(libnfc_nci::libnfc_nci ALIAS libnfc_nci)
 
 target_sources(libnfc_nci
@@ -241,7 +262,9 @@ target_sources(libnfc_nci
 
 target_compile_definitions(libnfc_nci
     PRIVATE
-        ${COMPILE_DEFINITIONS})
+        ${COMPILE_DEFINITIONS}
+        $<$<BOOL:${LIBNFCNCI_LIBGPIOD}>:USE_LIBGPIOD>
+)
 
 # NOTE (aw): this is dangerous
 target_compile_options(libnfc_nci
@@ -262,6 +285,25 @@ target_link_libraries(libnfc_nci
         Threads::Threads
 )
 
+set_target_properties(libnfc_nci
+    PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${LIBNFCNCI_SOVERSION}
+        OUTPUT_NAME nfc_nci
+)
+
+if(LIBNFCNCI_LIBGPIOD)
+    target_include_directories(libnfc_nci
+        PRIVATE
+            ${LIBGPIOD_INCLUDE_DIRS}
+    )
+
+    target_link_libraries(libnfc_nci
+        PRIVATE
+            ${LIBGPIOD_LIBRARIES}
+    )
+endif()
+
 #
 # examples
 #
@@ -275,6 +317,10 @@ if(LIBNFCNCI_BUILD_EXAMPLES)
         PRIVATE
             libnfc_nci
     )
+    install(
+        TARGETS nfc_cb_example
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 
     add_executable(nfc_demo)
     target_sources(nfc_demo
@@ -286,6 +332,10 @@ if(LIBNFCNCI_BUILD_EXAMPLES)
         PRIVATE
             libnfc_nci
     )
+    install(
+        TARGETS nfc_demo
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 endif()
 
 #
@@ -295,10 +345,14 @@ if (LIBNFCNCI_INSTALL)
     install(
         TARGETS libnfc_nci
         EXPORT libnfc_nci-targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
     install(
-        DIRECTORY src/include/
+        FILES ${LIBNFCNCI_PUBLIC_HEADERS}
         TYPE INCLUDE
     )
 
@@ -310,8 +364,5 @@ if (LIBNFCNCI_INSTALL)
         NAME libnfc-nci
         EXPORT libnfc_nci-targets
         NAMESPACE libnfc_nci
-        ADDITIONAL_CONTENT
-            "find_dependency(Threads)"
     )
 endif()
-

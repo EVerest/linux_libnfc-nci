@@ -27,6 +27,10 @@
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 #include <poll.h>
+#include <memory>
+#ifdef USE_LIBGPIOD
+#include <gpiod.hpp>
+#endif
 
 #define EDGE_NONE 0
 #define EDGE_RISING 1
@@ -41,22 +45,10 @@
 extern phTmlNfc_i2cfragmentation_t fragmentation_enabled;
 
 class NfccAltTransport : public NfccTransport {
- public:
+public:
   NfccAltTransport();
-  bool_t bFwDnldFlag = false;
-  sem_t mTxRxSemaphore;
-  int iEnableFd;
-  int iInterruptFd;
-  int iFwDnldFd;
+  virtual ~NfccAltTransport() = default;
 
- public:
-  void gpio_set_ven(int value);
-  void gpio_set_fwdl(int value);
-  int verifyPin(int pin, int isoutput, int edge);
-  void wait4interrupt(void);
-  int SemTimedWait();
-  void SemPost();
-  int Flushdata(void* pDevHandle, uint8_t* pBuffer, int numRead);
   /*****************************************************************************
    **
    ** Function         Reset
@@ -70,7 +62,7 @@ class NfccAltTransport : public NfccTransport {
    **                  -1   - reset operation failure
    **
    ****************************************************************************/
-  int NfccReset(void* pDevHandle, NfccResetType eType);
+  int NfccReset(void* pDevHandle, NfccResetType eType) override;
 
   /*****************************************************************************
    **
@@ -82,7 +74,7 @@ class NfccAltTransport : public NfccTransport {
    **
    ** Returns          None
    ****************************************************************************/
-  void EnableFwDnldMode(bool mode);
+  void EnableFwDnldMode(bool mode) override;
 
   /*****************************************************************************
    **
@@ -94,9 +86,9 @@ class NfccAltTransport : public NfccTransport {
    **
    ** Returns           Current mode download/NCI
    ****************************************************************************/
-  bool_t IsFwDnldModeEnabled(void);
+  bool_t IsFwDnldModeEnabled(void) override;
 
-  /*******************************************************************************
+  /*****************************************************************************
    **
    ** Function         GetIrqState
    **
@@ -108,9 +100,36 @@ class NfccAltTransport : public NfccTransport {
    *Zer0.
    **                  In the case of IOCTL error, it returns -ve value.
    **
-   *******************************************************************************/
-  int GetIrqState(void* pDevHandle);
-  int GetNfcState(void* pDevHandle);
+   ****************************************************************************/
+  int GetIrqState(void* pDevHandle) override;
+
+  /*****************************************************************************
+   **
+   ** Function         Close
+   **
+   ** Description      Closes NFCC device
+   **
+   ** Parameters       pDevHandle - device handle
+   **
+   ** Returns          None
+   **
+   ****************************************************************************/
+  void Close(void *pDevHandle) override;
+
+protected:
+  bool_t bFwDnldFlag = false;
+  sem_t mTxRxSemaphore;
+  int iEnableFd{-1};
+  int iInterruptFd{-1};
+  int iFwDnldFd{-1};
+
+  void gpio_set_ven(int value);
+  void gpio_set_fwdl(int value);
+  int verifyPin(int pin, int isoutput, int edge);
+  void wait4interrupt(void);
+  int SemTimedWait();
+  void SemPost();
+
   /*****************************************************************************
    **
    ** Function         ConfigurePin
@@ -122,4 +141,26 @@ class NfccAltTransport : public NfccTransport {
    ** Returns           NFCSTATUS_SUCCESS - on Success/ -1 on Failure
    ****************************************************************************/
   int ConfigurePin();
+
+  // flag whether libgpiod members are in use instead of deprecated
+  // file descriptors above
+  bool_t m_GpioDInUse{false};
+
+  int GetIrqStateSysFS();
+
+#ifdef USE_LIBGPIOD
+  std::unique_ptr<gpiod::line_request> mEnableLineRequest;
+  std::unique_ptr<gpiod::line_request> mFWDownloadLineRequest;
+  std::unique_ptr<gpiod::line_request> mIRQLineRequest;
+
+  gpiod::line_request GetGpioLineByName(const std::string& name,
+                                        const std::string& consumer,
+                                        const gpiod::line_settings& settings);
+  gpiod::line_request GetGpioDByName(const std::string& name,
+                                     const std::string& consumer,
+                                     gpiod::line_settings& settings);
+  int GetIrqStateLibGpioD();
+  void SetGpioDPin(gpiod::line_request& lq, const char* line_descr, int value);
+#endif
+
 };
