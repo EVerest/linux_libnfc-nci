@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(libnfcnci
-    VERSION 202411.1.0
+    VERSION 2026.10.0
     DESCRIPTION "NFC NCI library adapted for use with EVerest"
     LANGUAGES C CXX)
 
