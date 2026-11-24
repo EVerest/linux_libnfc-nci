@@ -48,10 +48,15 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <mutex>
 #include <sys/stat.h>
 #include <string.h>
 
 #include <phNxpLog.h>
+
+// Protect cache loading, lookups, overrides and resets as one operation.
+// Recursive locking permits configuration API calls to call one another.
+static std::recursive_mutex configMutex;
 
 const char alternative_config_path[] = CONFIG_PATH;
 
@@ -1030,6 +1035,7 @@ CNxpNfcParam::CNxpNfcParam(const char* name,  unsigned long value) :
 *******************************************************************************/
 extern "C" void SetNxpAlternativeConfigPath(const char* path)
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     if (path != nullptr && path[0] != '\0') {
         CNxpNfcConfig::s_alternativeConfigPath = string(path);
         if (path[strlen(path) - 1] != '/') {
@@ -1091,6 +1097,7 @@ static bool parseI2cAddressValue(const char* value, unsigned long* parsed) {
 *******************************************************************************/
 extern "C" int SetNxpConfigValue(const char* name, const char* value)
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     if (name == NULL || value == NULL || !isRuntimeConfigKey(name)) {
         return false;
     }
@@ -1142,6 +1149,7 @@ extern "C" int SetNxpConfigValue(const char* name, const char* value)
 *******************************************************************************/
 extern "C" int GetNxpStrValue(const char* name, char* pValue, unsigned long len)
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance();
     bool val_status = rConfig.getValue(name, pValue, len);
     NXPLOG_EXTNS_D("%s: NXP Config Parameter : %s\n", __FUNCTION__, name);
@@ -1166,6 +1174,7 @@ extern "C" int GetNxpStrValue(const char* name, char* pValue, unsigned long len)
 *******************************************************************************/
 extern "C" int GetNxpByteArrayValue(const char* name, char* pValue,long bufflen, long *len)
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance();
     bool val_status = rConfig.getValue(name, pValue, bufflen,len);
     NXPLOG_EXTNS_D("%s: NXP Config Parameter : %s\n", __FUNCTION__, name);
@@ -1183,6 +1192,7 @@ extern "C" int GetNxpByteArrayValue(const char* name, char* pValue,long bufflen,
 *******************************************************************************/
 extern "C" int GetNxpNumValue(const char* name, void* pValue, unsigned long len)
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     if (!pValue)
         return false;
     CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance();
@@ -1239,6 +1249,7 @@ extern "C" int GetNxpNumValue(const char* name, void* pValue, unsigned long len)
 **
 *******************************************************************************/
 extern "C" int loadIntValueOrDefault(const char* name, int default_value) {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     unsigned long value = 0;
     int isfound = GetNxpNumValue(name, &value, sizeof(value));
     if (isfound > 0) {
@@ -1259,6 +1270,7 @@ extern "C" int loadIntValueOrDefault(const char* name, int default_value) {
 extern "C" void resetNxpConfig()
 
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance();
 
     rConfig.clean();
@@ -1297,6 +1309,7 @@ void readOptionalConfig(const char* extra)
 *******************************************************************************/
 extern "C" int isNxpConfigModified()
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance();
     return rConfig.checkTimestamp();
 }
@@ -1312,6 +1325,7 @@ extern "C" int isNxpConfigModified()
 *******************************************************************************/
 extern "C" int updateNxpConfigTimestamp()
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance();
     return rConfig.updateTimestamp();
 }
@@ -1327,6 +1341,7 @@ extern "C" int updateNxpConfigTimestamp()
 *******************************************************************************/
 extern "C" int isNxpConfigValid(unsigned long type)
 {
+    std::lock_guard<std::recursive_mutex> lock(configMutex);
     CNxpNfcConfig& rConfig = CNxpNfcConfig::GetInstance(type);
     return (rConfig.size() != 0);
 }
