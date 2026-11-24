@@ -762,7 +762,8 @@ init_retry:
   }
   NXPLOG_NCIHAL_D("FW version for FW file = 0x%x", wFwVer);
   NXPLOG_NCIHAL_D("FW version from device = 0x%x", wFwVerRsp);
-  if ((wFwVerRsp & 0x0000FFFF) == wFwVer) {
+  if ((wFwVerRsp & 0x0000FFFF) == wFwVer &&
+      loadIntValueOrDefault(NAME_FORCE_DOWNLOAD_ENABLE, 0) == 0) {
     NXPLOG_NCIHAL_D("FW update not required");
     phDnldNfc_ReSetHwDevHandle();
   } else {
