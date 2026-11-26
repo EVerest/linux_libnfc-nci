@@ -255,11 +255,10 @@ int getNumTags(void)
 
 int getFwVersion()
 {
-#if (APPL_DTA_MODE == TRUE)
-    tNFC_FW_VERSION fwVer = {0};
-    fwVer = nfc_ncif_getFWVersion();
-    return ((fwVer.rom_code_version & 0xFF ) << 16) | ((fwVer.major_version & 0xFF ) << 8) | (fwVer.minor_version & 0xFF);
-#endif
+    // The HAL caches the version reported in CORE_RESET_NTF (NCI 2.0)
+    // or CORE_INIT_RSP (NCI 1.0), independently of the optional DTA mode.
+    extern uint32_t wFwVerRsp;
+    return static_cast<int>(wFwVerRsp & 0x00FFFFFF);
 }
 
 #if 1 //def SNEP_ENABLED

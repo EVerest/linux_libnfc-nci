@@ -611,6 +611,21 @@ int InitMode(int tag, int p2p, int hce)
         {
             printf("NfcService Init Failed\n");
         }
+        else
+        {
+            unsigned int fw_version = (unsigned int)getFwVersion();
+            if (fw_version != 0)
+            {
+                printf("Reader firmware version: %02X.%02X.%02X\n",
+                       (fw_version >> 16) & 0xFF,
+                       (fw_version >> 8) & 0xFF,
+                       fw_version & 0xFF);
+            }
+            else
+            {
+                printf("Reader firmware version: unavailable\n");
+            }
+        }
     }
     
     if(0x00 == res)

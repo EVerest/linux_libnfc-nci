@@ -722,8 +722,10 @@ extern int getNumTags(void);
 extern int checkNextProtocol(void);
 
 /**
-* \brief Return FW version.
-* \return FW version on chip, return 0 if fails.
+* \brief Return the cached reader firmware version after successful doInitialize().
+* \return Version reported by the reader, packed as ROM code in bits 23..16,
+*         major in bits 15..8 and minor in bits 7..0; 0 if unavailable.
+*         Display each byte in hexadecimal to match NXP's version notation.
 */
 extern int getFwVersion();
 

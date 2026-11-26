@@ -85,10 +85,18 @@ The former `MW_CONFIG_DIR` prefix mechanism is no longer supported. Use
 `NFC_CONFIG_DIR` for the demos or `setConfigPath()` in library consumers.
 Storage, firmware and device paths are configured independently of this directory.
 
+After successful reader initialization, `nfc_demo` prints the firmware version
+reported by the reader, for example `Reader firmware version: 12.50.11`.
+This uses hexadecimal version bytes, independently of debug logging and any
+firmware image installed on disk. If no version is available, it prints
+`Reader firmware version: unavailable`.
+
 For a native build with examples enabled, hardware-free regression checks can
 be run with `python3 tests/test_config_paths.py build --sysconfdir /usr/local/etc`.
 Pass the actual compiled sysconfdir; the checks require C/C++ compilers and
 `strace` and never initialize NFC hardware.
+Reader-version API and startup checks are available separately via
+`python3 tests/test_reader_version.py build`.
 
 ### libgpiod
 
