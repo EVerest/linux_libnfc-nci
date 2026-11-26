@@ -752,7 +752,15 @@ void open_uri (const char* uri)
         strcat(temp, uri);
         strcat(temp, "&");
         printf("\t\t- Opening URI in web browser ...\n");
-        system(temp);
+        int status = system(temp);
+        if (status == -1)
+        {
+            perror("Failed to execute URI opener");
+        }
+        else if (status != 0)
+        {
+            fprintf(stderr, "URI opener shell returned status %d\n", status);
+        }
         free(temp);
     }
 }
