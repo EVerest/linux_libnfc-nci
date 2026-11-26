@@ -13,6 +13,7 @@ pkgconfiglib_DATA = \
 
 AM_CPPFLAGS = \
 	-DCONFIG_PATH='"$(configdir)/"' \
+	-DFW_LIB_ROOT_DIR='"$(libdir)/"' \
 	-I$(srcdir)/src/include \
 	$(INCLUDE_PARAMS) \
 	$(libnfc_nci_linux_la_FLAGS) \

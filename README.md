@@ -85,6 +85,12 @@ The former `MW_CONFIG_DIR` prefix mechanism is no longer supported. Use
 `NFC_CONFIG_DIR` for the demos or `setConfigPath()` in library consumers.
 Storage, firmware and device paths are configured independently of this directory.
 
+On Linux, the firmware loader searches for its shared library in the absolute
+GNUInstallDirs library directory selected at build time. For example,
+`-DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib` selects
+`/usr/lib/libpn7160_fw.so` for PN7160. Install the separate firmware package
+in the same directory. Autotools builds use `libdir` instead.
+
 After successful reader initialization, `nfc_demo` prints the firmware version
 reported by the reader, for example `Reader firmware version: 12.50.11`.
 This uses hexadecimal version bytes, independently of debug logging and any

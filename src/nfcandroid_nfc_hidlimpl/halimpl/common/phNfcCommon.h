@@ -33,7 +33,9 @@
 #include <pthread.h>
 #include <semaphore.h>
 #ifdef LINUX
-#define FW_LIB_ROOT_DIR "//usr//local//lib//"
+#ifndef FW_LIB_ROOT_DIR
+#define FW_LIB_ROOT_DIR "/usr/local/lib/"
+#endif
 #else
 #define FW_LIB_ROOT_DIR "/vendor/lib/"
 #endif
