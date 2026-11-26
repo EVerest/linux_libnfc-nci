@@ -632,7 +632,12 @@ extern int nfcTag_transceive (unsigned int handle, unsigned char *tx_buffer, int
 
 
 /**
-* \brief set config file search path.
+* \brief Set the base directory for libnfc-nxp.conf and libnfc-nci.conf.
+*        Call before the first configuration access (including InitializeLogLevel)
+*        and before doInitialize(). Already loaded settings are not reloaded.
+*        The default is the sysconfdir selected when building the library.
+* \param path: directory with or without a trailing slash; relative paths are
+*              relative to the working directory. NULL and empty strings are ignored.
 * \return None
 */
 extern void setConfigPath (const char *path);

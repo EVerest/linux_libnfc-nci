@@ -186,6 +186,9 @@ int nfcTag_transceive (unsigned int handle, unsigned char *tx_buffer, int tx_buf
 
 void setConfigPath (const char *path)
 {
+    if (path == nullptr || path[0] == '\0') {
+        return;
+    }
     SetNxpAlternativeConfigPath(path);
     ConfigPathProvider::setConfigPath(path);
     SetNciHalConfigPath(path);

@@ -53,13 +53,7 @@
 
 #include <phNxpLog.h>
 
-#if GENERIC_TARGET
-const char alternative_config_path[] = "/data/nfc/";
-#else
 const char alternative_config_path[] = CONFIG_PATH;
-#endif
-
-const char transport_config_path[] = "/etc/";
 
 //#define config_name             "libnfc-nxp.conf"
 //#define config_base       "libnfc-nxp-"
@@ -532,22 +526,8 @@ CNxpNfcConfig& CNxpNfcConfig::GetInstance(unsigned long cfgtype)
 
     if (true == load_cfg)
     {
-        int cfg_file_stat = -1;
-
-        if (!s_alternativeConfigPath.empty())
-        {
-            struct stat st;
-
-            strPath.assign(s_alternativeConfigPath);
-            strPath += cfg_name;
-            cfg_file_stat = stat(strPath.c_str(), &st);
-        }
-
-        if( cfg_file_stat == -1 )
-        {
-            strPath.assign(transport_config_path);
-            strPath += cfg_name;
-        }
+        strPath.assign(s_alternativeConfigPath);
+        strPath += cfg_name;
 
 #if (NFC_CFG_DEBUG == 0x01)
             /* Since the config file is loaded before reading the configuration,
@@ -1050,8 +1030,11 @@ CNxpNfcParam::CNxpNfcParam(const char* name,  unsigned long value) :
 *******************************************************************************/
 extern "C" void SetNxpAlternativeConfigPath(const char* path)
 {
-    if (path[0] != '\0') {
-        CNxpNfcConfig::s_alternativeConfigPath = string(path) + "/";
+    if (path != nullptr && path[0] != '\0') {
+        CNxpNfcConfig::s_alternativeConfigPath = string(path);
+        if (path[strlen(path) - 1] != '/') {
+            CNxpNfcConfig::s_alternativeConfigPath += "/";
+        }
     }
 }
 
@@ -1294,9 +1277,7 @@ extern "C" void resetNxpConfig()
 void readOptionalConfig(const char* extra)
 {
     string strPath;
-    strPath.assign(transport_config_path);
-    if (alternative_config_path[0] != '\0')
-        strPath.assign(alternative_config_path);
+    strPath.assign(CNxpNfcConfig::s_alternativeConfigPath);
 
     strPath += extra_config_base;
     strPath += extra;

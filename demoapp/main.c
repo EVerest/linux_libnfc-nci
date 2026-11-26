@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "linux_nfc_api.h"
+#include "config_options.h"
 #include "tools.h"
 typedef enum eDevState
 {
@@ -587,8 +588,6 @@ int InitMode(int tag, int p2p, int hce)
 {
     int res = 0x00;
 
-    setConfigPath("../../build/dist/etc/everest/libnfc_config");
-    
     InitializeLogLevel();
     g_TagCB.onTagArrival = onTagArrival;
     g_TagCB.onTagDeparture = onTagDeparture;
@@ -2137,6 +2136,21 @@ int CleanEnv()
  
 int main(int argc, char ** argv)
 {
+    const char *config_path;
+    int first_arg = parse_config_options(argc, argv, &config_path);
+    if (first_arg < 0) {
+        return EXIT_FAILURE;
+    }
+    /* Keep the existing command parser's argv[1] convention. */
+    argc -= first_arg - 1;
+    argv += first_arg - 1;
+    if (argc > 1 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
+        help(0x00);
+        return EXIT_SUCCESS;
+    }
+    if (config_path != NULL) {
+        setConfigPath(config_path);
+    }
     if (argc<2)
     {
         printf("Missing argument\n");
@@ -2171,6 +2185,7 @@ int main(int argc, char ** argv)
  
 void help(int mode)
 {
+    print_config_options();
     printf("\nCOMMAND: \n");
     printf("\tpoll\tPolling mode \t e.g. <nfcDemoApp poll >\n");
     printf("\twrite\tWrite tag \t e.g. <nfcDemoApp write --type=Text -l en -r \"Test\">\n");

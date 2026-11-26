@@ -9,16 +9,6 @@ project(libnfcnci_demo
 
 find_package(libnfc-nci REQUIRED)
 
-get_target_property(LIBNFCNCI_CONFIG_INSTALL_PATH libnfc_nci::libnfc_nci LIBNFCNCI_CONFIG_INSTALL_PATH)
-
-message(STATUS "${LIBNFCNCI_CONFIG_INSTALL_PATH}")
-
-install(FILES
-        ../conf/libnfc-nxp.conf
-        ../conf/libnfc-nci.conf
-    DESTINATION
-	    "${LIBNFCNCI_CONFIG_INSTALL_PATH}")
-
 add_executable(nfc_cb_example)
 target_sources(nfc_cb_example
     PRIVATE

@@ -226,6 +226,7 @@ SERVICE_SOURCE := \
 
 
 nfcDemoApp_SOURCES := \
+	demoapp/config_options.h \
 	demoapp/main.c \
 	demoapp/tools.c
 
