@@ -745,7 +745,7 @@ void PrintfNDEFInfo(ndef_info_t pNDEFinfo)
 
 void open_uri (const char* uri)
 {
-    char *temp = malloc(strlen("xdg-open ") + strlen(uri) + 1);
+    char *temp = malloc(strlen("xdg-open ") + strlen(uri) + 2);
     if (temp != NULL)
     {
         strcpy(temp, "xdg-open ");
