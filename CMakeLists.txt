@@ -263,6 +263,13 @@ target_compile_definitions(libnfc_nci
         $<$<BOOL:${LIBNFCNCI_LIBGPIOD}>:USE_LIBGPIOD>
 )
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+    # Keep source paths in log macros relative without changing debug information.
+    target_compile_options(libnfc_nci PRIVATE
+        "-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/=./"
+    )
+endif()
+
 # NOTE (aw): this is dangerous
 target_compile_options(libnfc_nci
     PRIVATE
