@@ -31,7 +31,6 @@
 #include "phNxpLog.h"
 
 const char alternative_config_path[] = CONFIG_PATH;
-const char transport_config_path[] = "/etc/";
 
 #define config_name             "libnfc-nci.conf"
 #define extra_config_base       "libnfc-nci-"
@@ -244,8 +243,11 @@ private:
 *******************************************************************************/
 void SetNciHalConfigPath(const char* path)
 {
-    if (path[0] != '\0') {
-        CNfcConfig::s_alternativeConfigPath = string(path) + "/";
+    if (path != nullptr && path[0] != '\0') {
+        CNfcConfig::s_alternativeConfigPath = string(path);
+        if (path[strlen(path) - 1] != '/') {
+            CNfcConfig::s_alternativeConfigPath += "/";
+        }
     }
 }
 
@@ -577,15 +579,6 @@ CNfcConfig& CNfcConfig::GetInstance()
             /* Since the config file is loaded before reading the configuration,
              * using the log macro may not print the below debug message, hence
              * fprintf used */
-            fprintf(stderr, "%s: Reading Config File: %s...\n", __FUNCTION__, strPath.c_str());
-#endif
-            theInstance.readConfig(strPath.c_str(), true);
-        }
-        if (theInstance.empty())
-        {
-            strPath.assign(transport_config_path);
-            strPath += cfg_name;
-#if (NFC_CFG_DEBUG == 0x01)
             fprintf(stderr, "%s: Reading Config File: %s...\n", __FUNCTION__, strPath.c_str());
 #endif
             theInstance.readConfig(strPath.c_str(), true);

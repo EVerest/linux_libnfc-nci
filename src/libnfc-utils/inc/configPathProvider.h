@@ -36,38 +36,12 @@ class ConfigPathProvider {
 ConfigPathProvider();
 /*******************************************************************************
 **
-** Function         getEnvVar.
-**
-** Description      Returns valid value stored in requested Env variable if
-**                  available, else returns empty string
-**
-** Returns          value stored in requested Env variable
-**
-*******************************************************************************/
-string getEnvVar(std::string const &key);
-
-/*******************************************************************************
-**
-** Function         addEnvPathIfAvailable.
-**
-** Description      If Env variable MW_CONFIG_DIR is available and has valid
-**                  path in it, then that path will be added to predefined
-**                  directory structure of the file generating actual
-**                  location in host system
-**
-** Returns          None.
-**
-*******************************************************************************/
-void addEnvPathIfAvailable(string &path);
-
-/*******************************************************************************
-**
 ** Static Member    s_configPath
 **
 ** Description      Runtime configurable configuration file path
 **
 *******************************************************************************/
-inline static string s_configPath {"//usr//local//etc//"};
+static string s_configPath;
 
 public:
 /*******************************************************************************

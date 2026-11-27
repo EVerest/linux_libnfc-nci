@@ -25,10 +25,6 @@ if (LIBNFCNCI_LIBGPIOD)
     pkg_search_module(LIBGPIOD REQUIRED libgpiodcxx)
 endif()
 
-if (NOT LIBNFCNCI_CONFIG_INSTALL_PATH)
-    set (LIBNFCNCI_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_SYSCONFDIR}/everest/libnfc_config/")
-endif()
-
 set (LIBNFCNCI_CONFIG_FILES
     conf/libnfc-nci.conf
     conf/libnfc-nxp.conf
@@ -232,7 +228,9 @@ set (LIBNFCNCI_INCLUDE_DIRS
 )
 
 set (COMPILE_DEFINITIONS
-    -DCONFIG_PATH="${LIBNFCNCI_CONFIG_INSTALL_PATH}"
+    # Use GNUInstallDirs' absolute path for runtime lookup and installation.
+    -DCONFIG_PATH="${CMAKE_INSTALL_FULL_SYSCONFDIR}/"
+    -DFW_LIB_ROOT_DIR="${CMAKE_INSTALL_FULL_LIBDIR}/"
     -DNFC_CFG_DEBUG=FALSE
     -DNFC_NXP_NOT_OPEN_INCLUDED=TRUE
     -DNXP_HW_SELF_TEST
@@ -265,6 +263,13 @@ target_compile_definitions(libnfc_nci
         ${COMPILE_DEFINITIONS}
         $<$<BOOL:${LIBNFCNCI_LIBGPIOD}>:USE_LIBGPIOD>
 )
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+    # Keep source paths in log macros relative without changing debug information.
+    target_compile_options(libnfc_nci PRIVATE
+        "-fmacro-prefix-map=${PROJECT_SOURCE_DIR}/=./"
+    )
+endif()
 
 # NOTE (aw): this is dangerous
 target_compile_options(libnfc_nci
@@ -357,7 +362,7 @@ if (LIBNFCNCI_INSTALL)
     )
 
     install(FILES ${LIBNFCNCI_CONFIG_FILES}
-        DESTINATION "${LIBNFCNCI_CONFIG_INSTALL_PATH}"
+        DESTINATION "${CMAKE_INSTALL_FULL_SYSCONFDIR}"
     )
 
     evc_setup_package(

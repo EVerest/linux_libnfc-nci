@@ -51,6 +51,7 @@ using namespace ::std;
 using namespace ::android::base;
 #endif
 namespace {
+#ifdef ANDROID
 std::string searchConfigPath(std::string file_name) {
   const std::vector<std::string> search_path = {
       "/product/etc/", "/odm/etc/", "/vendor/etc/", "/system_ext/etc/", "/etc/",
@@ -63,6 +64,7 @@ std::string searchConfigPath(std::string file_name) {
   }
   return "";
 }
+#endif
 // Configuration File Search sequence
 // 1. If prop_config_file_name is defined.(where prop_config_file_name is the
 //   value of the property persist.nfc_cfg.config_file_name)

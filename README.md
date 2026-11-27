@@ -20,20 +20,37 @@ The [original upstream source code](https://github.com/NXPNFCLinux/linux_libnfc-
 
 When using this library in EVerest, retrieval of the source code will be handled automatically.
 
-Using ```add_subdirectory``` or ```find_package(libnfc_nci)``` in a depending CMake project, will provide the property ```LIBNFCNCI_CONFIG_INSTALL_PATH```, which can be retrieved to be used by the depending project:
- 
- ```get_target_property(LIBNFCNCI_CONFIG_INSTALL_PATH libnfc_nci::libnfc_nci LIBNFCNCI_CONFIG_INSTALL_PATH)```
+Use `add_subdirectory()` or `find_package(libnfc-nci)` and link against
+`libnfc_nci::libnfc_nci`. The library searches for `libnfc-nci.conf` and
+`libnfc-nxp.conf` directly in the sysconfdir selected at build time.
 
-This path is where the configuration files
+GNUInstallDirs controls both installation and the compiled default:
 
-- ```libnfc-nci.conf```
-- ```libnfc-nxp.conf```
+- Default configuration: `/usr/local/etc`.
+- `-DCMAKE_INSTALL_PREFIX=/usr`: `/etc`.
+- `-DCMAKE_INSTALL_SYSCONFDIR=/etc`: explicitly select `/etc`.
+- A relative `CMAKE_INSTALL_SYSCONFDIR` is resolved using GNUInstallDirs.
 
-are expected to be.
+Both files are installed there when `LIBNFCNCI_INSTALL=ON`. When installation
+is disabled, the consuming project must supply them. `DESTDIR` only stages
+installation; it is not part of the compiled path. Changing the install prefix
+at installation time does not change the library's compiled default.
 
-If *libnfc_nci* is included via ```add_subdirectory```, the depending project is responsible to install the required versions of these files.
+`LIBNFCNCI_CONFIG_INSTALL_PATH` and its former target property have been removed;
+use `CMAKE_INSTALL_SYSCONFDIR` for build-time configuration instead.
 
-If *libnfc_nci* is included via ```find_package()```, the depending project may still need to install the configuration files in order to overwrite the defaults installed by the library.
+Applications may select another directory before any configuration access
+(including `InitializeLogLevel()`) and before `doInitialize()`:
+
+```c
+setConfigPath("/etc/everest/libnfc_config");
+```
+
+This selects the directory for all configuration readers. There is no fallback
+to `/etc` or another directory. Relative paths refer to the working directory;
+a trailing slash is optional. NULL and empty paths are ignored. The last valid
+call before configuration is read wins; already loaded settings are not reloaded.
+The library does not select its configuration directory from environment variables.
 
 ### As Standalone Build
 
@@ -51,6 +68,41 @@ cmake --build . --parallel -j
 cmake --install .
 ```
 This will also install the configuration files into the expected folder.
+
+### Demo configuration directory
+
+Both demos use the library default unless overridden with a global command-line
+option or `NFC_CONFIG_DIR`. Command-line options take precedence over the
+non-empty environment variable. Put global options before the command:
+
+```sh
+nfc_demo --config-dir /etc/everest/libnfc_config poll
+nfc_demo --config-dir=/etc/everest/libnfc_config poll
+NFC_CONFIG_DIR=/etc/everest/libnfc_config nfc_cb_example
+```
+
+The former `MW_CONFIG_DIR` prefix mechanism is no longer supported. Use
+`NFC_CONFIG_DIR` for the demos or `setConfigPath()` in library consumers.
+Storage, firmware and device paths are configured independently of this directory.
+
+On Linux, the firmware loader searches for its shared library in the absolute
+GNUInstallDirs library directory selected at build time. For example,
+`-DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib` selects
+`/usr/lib/libpn7160_fw.so` for PN7160. Install the separate firmware package
+in the same directory. Autotools builds use `libdir` instead.
+
+After successful reader initialization, `nfc_demo` prints the firmware version
+reported by the reader, for example `Reader firmware version: 12.50.11`.
+This uses hexadecimal version bytes, independently of debug logging and any
+firmware image installed on disk. If no version is available, it prints
+`Reader firmware version: unavailable`.
+
+For a native build with examples enabled, hardware-free regression checks can
+be run with `python3 tests/test_config_paths.py build --sysconfdir /usr/local/etc`.
+Pass the actual compiled sysconfdir; the checks require C/C++ compilers and
+`strace` and never initialize NFC hardware.
+Reader-version API and startup checks are available separately via
+`python3 tests/test_reader_version.py build`.
 
 ### libgpiod
 

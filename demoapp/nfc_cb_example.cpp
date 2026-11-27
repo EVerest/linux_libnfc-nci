@@ -8,6 +8,7 @@
 
 
 #include "linux_nfc_api.h"
+#include "config_options.h"
 
 // class declaration
 class NfcHandler {
@@ -40,8 +41,6 @@ NfcHandler::NfcHandler() {
         throw std::runtime_error("Only one global nfc handler instance allowed");
     }
 
-    setConfigPath("../../build/dist/etc/everest/libnfc_config");
-
     InitializeLogLevel();
 
     if (doInitialize() != 0) {
@@ -71,6 +70,24 @@ void NfcHandler::on_tag_departure() {
 }
 
 int main(int argc, char* argv[]) {
+    const char* config_path;
+    int first_arg = parse_config_options(argc, argv, &config_path);
+    if (first_arg < 0) {
+        return EXIT_FAILURE;
+    }
+    if (first_arg < argc) {
+        if (first_arg == argc - 1 &&
+            (strcmp(argv[first_arg], "--help") == 0 || strcmp(argv[first_arg], "-h") == 0)) {
+            print_config_options();
+            return EXIT_SUCCESS;
+        }
+        std::cerr << "Unexpected argument: " << argv[first_arg] << std::endl;
+        print_config_options();
+        return EXIT_FAILURE;
+    }
+    if (config_path != nullptr) {
+        setConfigPath(config_path);
+    }
     std::signal(SIGINT, handleSigInt);
 
     NfcHandler handler;

@@ -632,7 +632,12 @@ extern int nfcTag_transceive (unsigned int handle, unsigned char *tx_buffer, int
 
 
 /**
-* \brief set config file search path.
+* \brief Set the base directory for libnfc-nxp.conf and libnfc-nci.conf.
+*        Call before the first configuration access (including InitializeLogLevel)
+*        and before doInitialize(). Already loaded settings are not reloaded.
+*        The default is the sysconfdir selected when building the library.
+* \param path: directory with or without a trailing slash; relative paths are
+*              relative to the working directory. NULL and empty strings are ignored.
 * \return None
 */
 extern void setConfigPath (const char *path);
@@ -717,8 +722,10 @@ extern int getNumTags(void);
 extern int checkNextProtocol(void);
 
 /**
-* \brief Return FW version.
-* \return FW version on chip, return 0 if fails.
+* \brief Return the cached reader firmware version after successful doInitialize().
+* \return Version reported by the reader, packed as ROM code in bits 23..16,
+*         major in bits 15..8 and minor in bits 7..0; 0 if unavailable.
+*         Display each byte in hexadecimal to match NXP's version notation.
 */
 extern int getFwVersion();
 

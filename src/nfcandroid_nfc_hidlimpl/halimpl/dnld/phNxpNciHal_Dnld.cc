@@ -585,12 +585,15 @@ static void phNxpNciHal_fw_dnld_get_version_cb(void* pContext, NFCSTATUS status,
       else if ((FALSE == (gphNxpNciHal_fw_IoctlCtx.bDnldInitiated)) &&
                ((bNewVer[0] == bCurrVer[0]) && (bNewVer[1] == bCurrVer[1]))) {
         wStatus = NFCSTATUS_SUCCESS;
-#if (PH_LIBNFC_ENABLE_FORCE_DOWNLOAD == 0)
-        NXPLOG_FWDNLD_D("Version Already UpToDate!!\n");
-        (gphNxpNciHal_fw_IoctlCtx.bSkipSeq) = TRUE;
-#else
-        (gphNxpNciHal_fw_IoctlCtx.bForceDnld) = TRUE;
-#endif
+        unsigned long forceDownloadEnable = 0;
+        GetNxpNumValue(NAME_FORCE_DOWNLOAD_ENABLE, &forceDownloadEnable,
+                       sizeof(forceDownloadEnable));
+        if (forceDownloadEnable == 0) {
+          NXPLOG_FWDNLD_D("Version Already UpToDate!!\n");
+          (gphNxpNciHal_fw_IoctlCtx.bSkipSeq) = TRUE;
+        } else {
+          (gphNxpNciHal_fw_IoctlCtx.bForceDnld) = TRUE;
+        }
 
       }
       /* Minor Version number check - after download

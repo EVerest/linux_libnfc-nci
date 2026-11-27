@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "linux_nfc_api.h"
+#include "config_options.h"
 #include "tools.h"
 typedef enum eDevState
 {
@@ -90,6 +91,7 @@ static T4T_NDEF_EMU_Callback_t *pT4T_NDEF_EMU_PushCb = NULL;
 void help(int mode);
 int InitEnv();
 int LookForTag(char** args, int args_len, char* tag, char** data, int format);
+void PrintNDEFContent(nfc_tag_info_t* TagInfo, ndef_info_t* NDEFinfo, unsigned char* ndefRaw, unsigned int ndefRawLen);
 /********************************** HCE **********************************/
 static void T4T_NDEF_EMU_FillRsp (unsigned char *pRsp, unsigned short offset, unsigned char length)
 {
@@ -587,8 +589,6 @@ int InitMode(int tag, int p2p, int hce)
 {
     int res = 0x00;
 
-    setConfigPath("../../build/dist/etc/everest/libnfc_config");
-    
     InitializeLogLevel();
     g_TagCB.onTagArrival = onTagArrival;
     g_TagCB.onTagDeparture = onTagDeparture;
@@ -610,6 +610,21 @@ int InitMode(int tag, int p2p, int hce)
         if(0x00 != res)
         {
             printf("NfcService Init Failed\n");
+        }
+        else
+        {
+            unsigned int fw_version = (unsigned int)getFwVersion();
+            if (fw_version != 0)
+            {
+                printf("Reader firmware version: %02X.%02X.%02X\n",
+                       (fw_version >> 16) & 0xFF,
+                       (fw_version >> 8) & 0xFF,
+                       fw_version & 0xFF);
+            }
+            else
+            {
+                printf("Reader firmware version: unavailable\n");
+            }
         }
     }
     
@@ -745,14 +760,22 @@ void PrintfNDEFInfo(ndef_info_t pNDEFinfo)
 
 void open_uri (const char* uri)
 {
-    char *temp = malloc(strlen("xdg-open ") + strlen(uri) + 1);
+    char *temp = malloc(strlen("xdg-open ") + strlen(uri) + 2);
     if (temp != NULL)
     {
         strcpy(temp, "xdg-open ");
         strcat(temp, uri);
         strcat(temp, "&");
         printf("\t\t- Opening URI in web browser ...\n");
-        system(temp);
+        int status = system(temp);
+        if (status == -1)
+        {
+            perror("Failed to execute URI opener");
+        }
+        else if (status != 0)
+        {
+            fprintf(stderr, "URI opener shell returned status %d\n", status);
+        }
         free(temp);
     }
 }
@@ -2137,6 +2160,21 @@ int CleanEnv()
  
 int main(int argc, char ** argv)
 {
+    const char *config_path;
+    int first_arg = parse_config_options(argc, argv, &config_path);
+    if (first_arg < 0) {
+        return EXIT_FAILURE;
+    }
+    /* Keep the existing command parser's argv[1] convention. */
+    argc -= first_arg - 1;
+    argv += first_arg - 1;
+    if (argc > 1 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)) {
+        help(0x00);
+        return EXIT_SUCCESS;
+    }
+    if (config_path != NULL) {
+        setConfigPath(config_path);
+    }
     if (argc<2)
     {
         printf("Missing argument\n");
@@ -2171,6 +2209,7 @@ int main(int argc, char ** argv)
  
 void help(int mode)
 {
+    print_config_options();
     printf("\nCOMMAND: \n");
     printf("\tpoll\tPolling mode \t e.g. <nfcDemoApp poll >\n");
     printf("\twrite\tWrite tag \t e.g. <nfcDemoApp write --type=Text -l en -r \"Test\">\n");

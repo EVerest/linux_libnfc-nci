@@ -24,6 +24,7 @@
 extern bool nfc_debug_enabled;
 extern string nfc_storage_path;
 using android::base::StringPrintf;
+string ConfigPathProvider::s_configPath {CONFIG_PATH};
 ConfigPathProvider::ConfigPathProvider() {}
 
 /*******************************************************************************
@@ -41,42 +42,6 @@ return mConfigPathProviderInstance;
 
 /*******************************************************************************
 **
-** Function         getEnvVar.
-**
-** Description      Returns valid value stored in requested Env variable if
-**                  available, else returns empty string
-**
-** Returns          value stored in requested Env variable
-**
-*******************************************************************************/
-string ConfigPathProvider::getEnvVar(std::string const &key) {
-    char *val = getenv(key.c_str());
-    return val == NULL ? std::string("") : std::string(val);
-}
-
-/*******************************************************************************
-**
-** Function         addEnvPathIfAvailable.
-**
-** Description      If Env variable MW_CONFIG_DIR is available and has valid
-**                  path in it, then that path will be added to predefined
-**                  directory structure of the file generating actual
-**                  location in host system
-**
-** Returns          None.
-**
-*******************************************************************************/
-void ConfigPathProvider::addEnvPathIfAvailable(string &path) {
-    string mwConfigDir(getEnvVar("MW_CONFIG_DIR"));
-    struct stat file_stat;
-    if (!mwConfigDir.empty() && (stat(mwConfigDir.c_str(), &file_stat) == 0)) {
-        path.erase(0, 1);
-        path.insert(0, mwConfigDir);
-    }
-}
-
-/*******************************************************************************
-**
 ** Function         getFilePath
 **
 ** Description      Returns file path of requested type of file
@@ -90,18 +55,15 @@ string ConfigPathProvider::getFilePath(FileType type) {
     switch (type) {
     case VENDOR_NFC_CONFIG: {
         string path = s_configPath + "libnfc-nxp.conf";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
     case VENDOR_ESE_CONFIG: {
         string path = s_configPath + "libese-nxp.conf";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
     case SYSTEM_CONFIG: {
         const vector<string> searchPath = { s_configPath };
         for (string path : searchPath) {
-            addEnvPathIfAvailable(path);
             path.append("libnfc-nci.conf");
             LOG(INFO) << "path: " << path;
             struct stat file_stat;
@@ -112,38 +74,31 @@ string ConfigPathProvider::getFilePath(FileType type) {
     } break;
     case RF_CONFIG: {
         string path = s_configPath + "etc//libnfc-nxp_RF.conf";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
     case TRANSIT_CONFIG: {
         string path = s_configPath + "libnfc-nxpTransit.conf";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
     case NFASTORAGE_BIN: {
         string path = ".\\data\\nfc";
-        addEnvPathIfAvailable(path);
         nfc_storage_path.assign(path);
         return nfc_storage_path;
     } break;
     case FIRMWARE_LIB: {
         string path = s_configPath + "libsn100u_fw.dll";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
     case CONFIG_TIMESTAMP: {
         string path = s_configPath + "libnfc-nxpConfigState.bin";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
     case RF_CONFIG_TIMESTAMP: {
         string path = s_configPath + "libnfc-nxpRFConfigState.bin";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
     case TRANSIT_CONFIG_TIMESTAMP: {
         string path = s_configPath + "libnfc-nxpTransitConfigState.bin";
-        addEnvPathIfAvailable(path);
         return path;
     } break;
 
@@ -165,6 +120,6 @@ string ConfigPathProvider::getFilePath(FileType type) {
 *******************************************************************************/
 void ConfigPathProvider::setConfigPath(const string &path) {
     if (!path.empty()) {
-        ConfigPathProvider::s_configPath = path + "/";
+        ConfigPathProvider::s_configPath = path.back() == '/' ? path : path + "/";
     }
 }
